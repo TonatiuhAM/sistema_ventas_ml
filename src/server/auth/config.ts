@@ -1,4 +1,5 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import next from "next";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 
@@ -6,7 +7,7 @@ import { db } from "~/server/db";
 import {
   accounts,
   sessions,
-  users,
+  nextAuthUsers,
   verificationTokens,
 } from "~/server/db/schema";
 
@@ -50,7 +51,7 @@ export const authConfig = {
      */
   ],
   adapter: DrizzleAdapter(db, {
-    usersTable: users,
+    usersTable: nextAuthUsers,
     accountsTable: accounts,
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
