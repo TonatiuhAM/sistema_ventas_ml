@@ -10,47 +10,41 @@ import {
 } from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
 
-/**
- * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
- * database instance for multiple projects.
- *
- * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
- */
-export const createTable = pgTableCreator((name) => `sistema_ventas_ml_${name}`);
 
+export const createTable = pgTableCreator((name) => name);
 
 // C A T A L O G O S #######################################
-export const categoriasProductos = createTable("categorias_productos", {
+export const catCategoriasProductos = createTable("categorias_productos", { 
   id: integer("id").primaryKey().notNull(),
   categoria: varchar("categoria", { length: 30 }).notNull(),
 });
 
-export const estados = createTable("estados", {
+export const catEstados = createTable("estados", {
   id: integer("id").primaryKey().notNull(),
   estado: varchar("estado", { length: 20 }).notNull(),
 });
 
-export const categoriaPersonas = createTable("categoria_personas", {
+export const catCategoriaPersonas = createTable("categoria_personas", {
   id: integer("id").primaryKey().notNull(),
   categoria: varchar("categoria", { length: 30 }).notNull(),
 });
 
-export const roles = createTable("roles", {
+export const catRoles = createTable("roles", {
   id: integer("id").primaryKey().notNull(),
   roles: varchar("roles", { length: 20 }).notNull(),
 });
 
-export const metodosPago = createTable("metodos_pago", {
+export const catMetodosPago = createTable("metodos_pago", {
   id: integer("id").primaryKey().notNull(),
   metodoPago: varchar("metodo_pago", { length: 30 }).notNull(),
 });
 
-export const tipoMovimientos = createTable("tipo_movimientos", {
+export const catTipoMovimientos = createTable("tipo_movimientos", {
   id: integer("id").primaryKey().notNull(),
   movimiento: varchar("movimiento", { length: 12 }).notNull(),
 });
 
-export const ubicaciones = createTable("ubicaciones", {
+export const catUbicaciones = createTable("ubicaciones", {
   id: integer("id").primaryKey().notNull(),
   nombre: varchar("nombre", { length: 30 }).notNull(),
   ubicacion: varchar("ubicacion", { length: 30 }).notNull(),
@@ -65,9 +59,9 @@ export const personas = createTable("personas", {
   rfc: varchar("rfc", { length: 10 }).notNull(),
   telefono: varchar("telefono", { length: 20 }).notNull(),
   email: varchar("email", { length: 32 }).notNull(),
-  estadosId: integer("estados_id").references(() => estados.id).notNull(),
+  estadosId: integer("estados_id").references(() => catEstados.id).notNull(),
   categoriaPersonasId: integer("categoria_personas_id")
-    .references(() => categoriaPersonas.id)
+    .references(() => catCategoriaPersonas.id)
     .notNull(),
 });
 
@@ -75,10 +69,10 @@ export const productos = createTable("productos", {
   id: integer("id").primaryKey().notNull(),
   nombre: varchar("nombre", { length: 30 }).notNull(),
   categoriasProductosId: integer("categorias_productos_id")
-    .references(() => categoriasProductos.id)
+    .references(() => catCategoriasProductos.id)
     .notNull(),
   proveedorId: integer("proveedor_id").references(() => personas.id).notNull(),
-  estadosId: integer("estados_id").references(() => estados.id).notNull(),
+  estadosId: integer("estados_id").references(() => catEstados.id).notNull(),
 });
 
 export const historialPrecios = createTable("historial_precios", {
@@ -100,8 +94,8 @@ export const usuarios = createTable("usuarios", {
   nombre: varchar("nombre", { length: 30 }).notNull(),
   contrasena: varchar("contrasena", { length: 32 }).notNull(),
   telefono: varchar("telefono", { length: 20 }).notNull(),
-  rolesId: integer("roles_id").references(() => roles.id).notNull(),
-  estadosId: integer("estados_id").references(() => estados.id).notNull(),
+  rolesId: integer("roles_id").references(() => catRoles.id).notNull(),
+  estadosId: integer("estados_id").references(() => catEstados.id).notNull(),
 });
 
 export const ordenesDeVentas = createTable("ordenes_de_ventas", {
@@ -123,7 +117,7 @@ export const detallesOrdenesDeVentas = createTable("detalles_ordenes_de_ventas",
     .notNull(),
   cantidad: integer("cantidad").notNull(),
   totalVenta: integer("total_venta").notNull(),
-  metodosPagoId: integer("metodos_pago_id").references(() => metodosPago.id).notNull(),
+  metodosPagoId: integer("metodos_pago_id").references(() => catMetodosPago.id).notNull(),
 });
 
 export const historialPagosClientes = createTable("historial_pagos_clientes", {
@@ -131,14 +125,14 @@ export const historialPagosClientes = createTable("historial_pagos_clientes", {
   personasId: integer("personas_id").references(() => personas.id).notNull(),
   montoPagado: integer("monto_pagado").notNull(),
   fecha: timestamp("fecha", { withTimezone: true }).notNull(),
-  metodosPagoId: integer("metodos_pago_id").references(() => metodosPago.id).notNull(),
+  metodosPagoId: integer("metodos_pago_id").references(() => catMetodosPago.id).notNull(),
 });
 
 export const ordenesDeCompras = createTable("ordenes_de_compras", {
   id: integer("id").primaryKey().notNull(),
   personaId: integer("persona_id").references(() => personas.id).notNull(),
   fechaOrden: timestamp("fecha_orden", { withTimezone: true }).notNull(),
-  estadosId: integer("estados_id").references(() => estados.id).notNull(),
+  estadosId: integer("estados_id").references(() => catEstados.id).notNull(),
 });
 
 export const detallesOrdenesDeCompras = createTable("detalles_ordenes_de_compras", {
@@ -158,13 +152,13 @@ export const historialCargosProveedores = createTable("historial_cargos_proveedo
   personasId: integer("personas_id").references(() => personas.id).notNull(),
   montoPagado: integer("monto_pagado").notNull(),
   fecha: timestamp("fecha", { withTimezone: true }).notNull(),
-  metodosPagoId: integer("metodos_pago_id").references(() => metodosPago.id).notNull(),
+  metodosPagoId: integer("metodos_pago_id").references(() => catMetodosPago.id).notNull(),
 });
 
 export const inventarios = createTable("inventarios", {
   id: integer("id").primaryKey().notNull(),
   productosId: integer("productos_id").references(() => productos.id).notNull(),
-  ubicacionesId: integer("ubicaciones_id").references(() => ubicaciones.id).notNull(),
+  ubicacionesId: integer("ubicaciones_id").references(() => catUbicaciones.id).notNull(),
   cantidadDisponible: integer("cantidad_disponible").notNull(),
   cantidadMinima: integer("cantidad_minima").notNull(),
   cantidadMaxima: integer("cantidad_maxima").notNull(),
@@ -173,9 +167,9 @@ export const inventarios = createTable("inventarios", {
 export const movimientosInventarios = createTable("movimientos_inventarios", {
   id: integer("id").primaryKey().notNull(),
   productosId: integer("productos_id").references(() => productos.id).notNull(),
-  ubicacionesId: integer("ubicaciones_id").references(() => ubicaciones.id).notNull(),
+  ubicacionesId: integer("ubicaciones_id").references(() => catUbicaciones.id).notNull(),
   tipoMovimientosId: integer("tipo_movimientos_id")
-    .references(() => tipoMovimientos.id)
+    .references(() => catTipoMovimientos.id)
     .notNull(),
   cantidad: integer("cantidad").notNull(),
   fechaMovimiento: timestamp("fecha_movimiento", { withTimezone: true }).notNull(),
@@ -199,17 +193,17 @@ export const composicionProductos = createTable("composicion_productos", {
 // R E L A C I O N E S #######################################
 // Relación entre `categoriasProductos` y `productos`
 export const productosRelations = relations(productos, ({ one, many }) => ({
-  categoria: one(categoriasProductos, {
+  categoria: one(catCategoriasProductos, {
     fields: [productos.categoriasProductosId],
-    references: [categoriasProductos.id],
+    references: [catCategoriasProductos.id],
   }),
   proveedor: one(personas, {
     fields: [productos.proveedorId],
     references: [personas.id],
   }),
-  estado: one(estados, {
+  estado: one(catEstados, {
     fields: [productos.estadosId],
-    references: [estados.id],
+    references: [catEstados.id],
   }),
   historialPrecios: many(historialPrecios),
   historialCostos: many(historialCostos),
@@ -238,13 +232,13 @@ export const composicionProductosRelations = relations(composicionProductos, ({ 
 
 // Relación entre `personas` y otras tablas
 export const personasRelations = relations(personas, ({ one, many }) => ({
-  estado: one(estados, {
+  estado: one(catEstados, {
     fields: [personas.estadosId],
-    references: [estados.id],
+    references: [catEstados.id],
   }),
-  categoria: one(categoriaPersonas, {
+  categoria: one(catCategoriaPersonas, {
     fields: [personas.categoriaPersonasId],
-    references: [categoriaPersonas.id],
+    references: [catCategoriaPersonas.id],
   }),
   ordenesDeVentas: many(ordenesDeVentas),
   historialPagosClientes: many(historialPagosClientes),
@@ -278,9 +272,9 @@ export const detallesOrdenesDeVentasRelations = relations(detallesOrdenesDeVenta
     fields: [detallesOrdenesDeVentas.historialPreciosId],
     references: [historialPrecios.id],
   }),
-  metodoPago: one(metodosPago, {
+  metodoPago: one(catMetodosPago, {
     fields: [detallesOrdenesDeVentas.metodosPagoId],
-    references: [metodosPago.id],
+    references: [catMetodosPago.id],
   }),
 }));
 
@@ -290,9 +284,9 @@ export const inventariosRelations = relations(inventarios, ({ one }) => ({
     fields: [inventarios.productosId],
     references: [productos.id],
   }),
-  ubicacion: one(ubicaciones, {
+  ubicacion: one(catUbicaciones, {
     fields: [inventarios.ubicacionesId],
-    references: [ubicaciones.id],
+    references: [catUbicaciones.id],
   }),
 }));
 
@@ -302,13 +296,13 @@ export const movimientosInventariosRelations = relations(movimientosInventarios,
     fields: [movimientosInventarios.productosId],
     references: [productos.id],
   }),
-  ubicacion: one(ubicaciones, {
+  ubicacion: one(catUbicaciones, {
     fields: [movimientosInventarios.ubicacionesId],
-    references: [ubicaciones.id],
+    references: [catUbicaciones.id],
   }),
-  tipoMovimiento: one(tipoMovimientos, {
+  tipoMovimiento: one(catTipoMovimientos, {
     fields: [movimientosInventarios.tipoMovimientosId],
-    references: [tipoMovimientos.id],
+    references: [catTipoMovimientos.id],
   }),
   usuario: one(usuarios, {
     fields: [movimientosInventarios.usuariosId],
