@@ -1,3 +1,5 @@
+"use client";
+
 import { FormularioProductos } from "./_components/FormularioProductos";
 import { ListaProductos } from "./_components/ListaProductos";
 
