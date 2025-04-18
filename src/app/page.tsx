@@ -1,69 +1,50 @@
+"use client";
+
 import Link from "next/link";
+import { FaBoxOpen, FaListAlt, FaCashRegister } from "react-icons/fa";
 
-import { LatestPost } from "~/app/_components/post";
-import { auth } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
-
-export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-  const session = await auth();
-
-  if (session?.user) {
-    void api.post.getLatest.prefetch();
-  }
-
+export default function Home() {
   return (
-    <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-          </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-2xl text-white">
-              {hello ? hello.greeting : "Loading tRPC query..."}
-            </p>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-600 to-blue-800 text-white p-4">
+      <div className="container max-w-4xl mx-auto">
+        <header className="mb-12 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Sistema de Ventas ML</h1>
+          <p className="text-xl opacity-80">Panel de Administración</p>
+        </header>
 
-            <div className="flex flex-col items-center justify-center gap-4">
-              <p className="text-center text-2xl text-white">
-                {session && <span>Logged in as {session.user?.name}</span>}
-              </p>
-              <Link
-                href={session ? "/api/auth/signout" : "/api/auth/signin"}
-                className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
-              >
-                {session ? "Sign out" : "Sign in"}
-              </Link>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link 
+            href="/inventory" 
+            className="bg-white/10 hover:bg-white/20 p-8 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105"
+          >
+            <FaBoxOpen className="text-5xl mb-4" />
+            <h2 className="text-2xl font-semibold">Inventario</h2>
+            <p className="text-sm mt-2 text-center opacity-80">Gestiona productos y existencias</p>
+          </Link>
 
-          {session?.user && <LatestPost />}
+          <Link 
+            href="/catalogs" 
+            className="bg-white/10 hover:bg-white/20 p-8 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105"
+          >
+            <FaListAlt className="text-5xl mb-4" />
+            <h2 className="text-2xl font-semibold">Catálogos</h2>
+            <p className="text-sm mt-2 text-center opacity-80">Administra categorías y datos maestros</p>
+          </Link>
+
+          <Link 
+            href="/pos" 
+            className="bg-white/10 hover:bg-white/20 p-8 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105"
+          >
+            <FaCashRegister className="text-5xl mb-4" />
+            <h2 className="text-2xl font-semibold">Punto de Venta</h2>
+            <p className="text-sm mt-2 text-center opacity-80">Registra ventas y transacciones</p>
+          </Link>
         </div>
-      </main>
-    </HydrateClient>
+
+        <footer className="mt-16 text-center">
+          <p className="opacity-60">© {new Date().getFullYear()} Sistema de Ventas ML</p>
+        </footer>
+      </div>
+    </main>
   );
 }

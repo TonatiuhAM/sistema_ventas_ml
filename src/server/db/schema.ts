@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
   index,
   varchar,
@@ -243,3 +243,272 @@ export const posts = createTable(
       .references(() => nextAuthUsers.id),
     createdAt: timestamp("created_at", { withTimezone: true })
   });
+
+
+  // R E L A C I O N E S #######################################
+  // Relaciones para catálogos
+export const catCategoriasProductosRelations = relations(catCategoriasProductos, ({ many }) => ({
+  productos: many(productos)
+}));
+
+export const catEstadosRelations = relations(catEstados, ({ many }) => ({
+  personas: many(personas),
+  productos: many(productos),
+  usuarios: many(usuarios),
+  ordenesDeCompras: many(ordenesDeCompras)
+}));
+
+export const catCategoriaPersonasRelations = relations(catCategoriaPersonas, ({ many }) => ({
+  personas: many(personas)
+}));
+
+export const catRolesRelations = relations(catRoles, ({ many }) => ({
+  usuarios: many(usuarios)
+}));
+
+export const catMetodosPagoRelations = relations(catMetodosPago, ({ many }) => ({
+  detallesOrdenesDeVentas: many(detallesOrdenesDeVentas),
+  historialPagosClientes: many(historialPagosClientes),
+  historialCargosProveedores: many(historialCargosProveedores)
+}));
+
+export const catTipoMovimientosRelations = relations(catTipoMovimientos, ({ many }) => ({
+  movimientosInventarios: many(movimientosInventarios)
+}));
+
+export const catUbicacionesRelations = relations(catUbicaciones, ({ many }) => ({
+  inventarios: many(inventarios),
+  movimientosInventarios: many(movimientosInventarios)
+}));
+
+// Relaciones para personas
+export const personasRelations = relations(personas, ({ one, many }) => ({
+  estado: one(catEstados, {
+    fields: [personas.estadosId],
+    references: [catEstados.id]
+  }),
+  categoriaPersona: one(catCategoriaPersonas, {
+    fields: [personas.categoriaPersonasId],
+    references: [catCategoriaPersonas.id]
+  }),
+  productosProveidos: many(productos),
+  ordenesDeVentas: many(ordenesDeVentas),
+  ordenesDeCompras: many(ordenesDeCompras),
+  historialPagosClientes: many(historialPagosClientes),
+  historialCargosProveedores: many(historialCargosProveedores)
+}));
+
+// Relaciones para productos
+export const productosRelations = relations(productos, ({ one, many }) => ({
+  categoriaProducto: one(catCategoriasProductos, {
+    fields: [productos.categoriasProductosId],
+    references: [catCategoriasProductos.id]
+  }),
+  proveedor: one(personas, {
+    fields: [productos.proveedorId],
+    references: [personas.id]
+  }),
+  estado: one(catEstados, {
+    fields: [productos.estadosId],
+    references: [catEstados.id]
+  }),
+  historialPrecios: many(historialPrecios),
+  historialCostos: many(historialCostos),
+  detallesOrdenesDeVentas: many(detallesOrdenesDeVentas),
+  detallesOrdenesDeCompras: many(detallesOrdenesDeCompras),
+  inventarios: many(inventarios),
+  movimientosInventarios: many(movimientosInventarios),
+  composicionesComoPadre: many(composicionProductos, { relationName: "productoPadre" }),
+  composicionesComoHijo: many(composicionProductos, { relationName: "productoHijo" })
+}));
+
+// Relaciones para historiales de precios y costos
+export const historialPreciosRelations = relations(historialPrecios, ({ one, many }) => ({
+  producto: one(productos, {
+    fields: [historialPrecios.productosId],
+    references: [productos.id]
+  }),
+  detallesOrdenesDeVentas: many(detallesOrdenesDeVentas)
+}));
+
+export const historialCostosRelations = relations(historialCostos, ({ one, many }) => ({
+  producto: one(productos, {
+    fields: [historialCostos.productosId],
+    references: [productos.id]
+  }),
+  detallesOrdenesDeCompras: many(detallesOrdenesDeCompras)
+}));
+
+// Relaciones para usuarios
+export const usuariosRelations = relations(usuarios, ({ one, many }) => ({
+  rol: one(catRoles, {
+    fields: [usuarios.rolesId],
+    references: [catRoles.id]
+  }),
+  estado: one(catEstados, {
+    fields: [usuarios.estadosId],
+    references: [catEstados.id]
+  }),
+  ordenesDeVentas: many(ordenesDeVentas),
+  movimientosInventarios: many(movimientosInventarios)
+}));
+
+// Relaciones para órdenes de ventas
+export const ordenesDeVentasRelations = relations(ordenesDeVentas, ({ one, many }) => ({
+  cliente: one(personas, {
+    fields: [ordenesDeVentas.personasId],
+    references: [personas.id]
+  }),
+  usuario: one(usuarios, {
+    fields: [ordenesDeVentas.usuariosId],
+    references: [usuarios.id]
+  }),
+  detalles: many(detallesOrdenesDeVentas)
+}));
+
+// Relaciones para detalles de órdenes de ventas
+export const detallesOrdenesDeVentasRelations = relations(detallesOrdenesDeVentas, ({ one }) => ({
+  ordenVenta: one(ordenesDeVentas, {
+    fields: [detallesOrdenesDeVentas.ordenesDeVentasId],
+    references: [ordenesDeVentas.id]
+  }),
+  producto: one(productos, {
+    fields: [detallesOrdenesDeVentas.productosId],
+    references: [productos.id]
+  }),
+  historialPrecio: one(historialPrecios, {
+    fields: [detallesOrdenesDeVentas.historialPreciosId],
+    references: [historialPrecios.id]
+  }),
+  metodoPago: one(catMetodosPago, {
+    fields: [detallesOrdenesDeVentas.metodosPagoId],
+    references: [catMetodosPago.id]
+  })
+}));
+
+// Relaciones para historial de pagos de clientes
+export const historialPagosClientesRelations = relations(historialPagosClientes, ({ one }) => ({
+  cliente: one(personas, {
+    fields: [historialPagosClientes.personasId],
+    references: [personas.id]
+  }),
+  metodoPago: one(catMetodosPago, {
+    fields: [historialPagosClientes.metodosPagoId],
+    references: [catMetodosPago.id]
+  })
+}));
+
+// Relaciones para órdenes de compras
+export const ordenesDeComprasRelations = relations(ordenesDeCompras, ({ one, many }) => ({
+  proveedor: one(personas, {
+    fields: [ordenesDeCompras.personaId],
+    references: [personas.id]
+  }),
+  estado: one(catEstados, {
+    fields: [ordenesDeCompras.estadosId],
+    references: [catEstados.id]
+  }),
+  detalles: many(detallesOrdenesDeCompras)
+}));
+
+// Relaciones para detalles de órdenes de compras
+export const detallesOrdenesDeComprasRelations = relations(detallesOrdenesDeCompras, ({ one }) => ({
+  ordenCompra: one(ordenesDeCompras, {
+    fields: [detallesOrdenesDeCompras.ordenesDeComprasId],
+    references: [ordenesDeCompras.id]
+  }),
+  producto: one(productos, {
+    fields: [detallesOrdenesDeCompras.productoId],
+    references: [productos.id]
+  }),
+  historialCosto: one(historialCostos, {
+    fields: [detallesOrdenesDeCompras.historialCostosId],
+    references: [historialCostos.id]
+  })
+}));
+
+// Relaciones para historial de cargos a proveedores
+export const historialCargosProveedoresRelations = relations(historialCargosProveedores, ({ one }) => ({
+  proveedor: one(personas, {
+    fields: [historialCargosProveedores.personasId],
+    references: [personas.id]
+  }),
+  metodoPago: one(catMetodosPago, {
+    fields: [historialCargosProveedores.metodosPagoId],
+    references: [catMetodosPago.id]
+  })
+}));
+
+// Relaciones para inventarios
+export const inventariosRelations = relations(inventarios, ({ one }) => ({
+  producto: one(productos, {
+    fields: [inventarios.productosId],
+    references: [productos.id]
+  }),
+  ubicacion: one(catUbicaciones, {
+    fields: [inventarios.ubicacionesId],
+    references: [catUbicaciones.id]
+  })
+}));
+
+// Relaciones para movimientos de inventarios
+export const movimientosInventariosRelations = relations(movimientosInventarios, ({ one }) => ({
+  producto: one(productos, {
+    fields: [movimientosInventarios.productosId],
+    references: [productos.id]
+  }),
+  ubicacion: one(catUbicaciones, {
+    fields: [movimientosInventarios.ubicacionesId],
+    references: [catUbicaciones.id]
+  }),
+  tipoMovimiento: one(catTipoMovimientos, {
+    fields: [movimientosInventarios.tipoMovimientosId],
+    references: [catTipoMovimientos.id]
+  }),
+  usuario: one(usuarios, {
+    fields: [movimientosInventarios.usuariosId],
+    references: [usuarios.id]
+  })
+}));
+
+// Relaciones para composición de productos
+export const composicionProductosRelations = relations(composicionProductos, ({ one }) => ({
+  productoPadre: one(productos, {
+    fields: [composicionProductos.productoPadreId],
+    references: [productos.id],
+    relationName: "productoPadre"
+  }),
+  productoHijo: one(productos, {
+    fields: [composicionProductos.productoHijoId],
+    references: [productos.id],
+    relationName: "productoHijo"
+  })
+}));
+
+// Relaciones para Auth.js
+export const nextAuthUsersRelations = relations(nextAuthUsers, ({ many }) => ({
+  accounts: many(accounts),
+  sessions: many(sessions),
+  posts: many(posts)
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(nextAuthUsers, {
+    fields: [accounts.userId],
+    references: [nextAuthUsers.id]
+  })
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(nextAuthUsers, {
+    fields: [sessions.userId],
+    references: [nextAuthUsers.id]
+  })
+}));
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  author: one(nextAuthUsers, {
+    fields: [posts.createdById],
+    references: [nextAuthUsers.id]
+  })
+}));
