@@ -53,11 +53,11 @@ export const catUbicaciones = createTable("ubicaciones", {
 export const personas = createTable("personas", {
   id: varchar("id", { length: 36 }).primaryKey().notNull(),
   nombre: varchar("nombre", { length: 30 }).notNull(),
-  apellidoPaterno: varchar("apellido_paterno", { length: 30 }).notNull(),
-  apellidoMaterno: varchar("apellido_materno", { length: 30 }).notNull(),
-  rfc: varchar("rfc", { length: 10 }).notNull(),
+  apellidoPaterno: varchar("apellido_paterno", { length: 30 }),
+  apellidoMaterno: varchar("apellido_materno", { length: 30 }),
+  rfc: varchar("rfc", { length: 10 }), //No es obligatorio tenerlo
   telefono: varchar("telefono", { length: 20 }).notNull(),
-  email: varchar("email", { length: 32 }).notNull(),
+  email: varchar("email", { length: 32 }),
   estadosId: varchar("estados_id", { length: 36 }).references(() => catEstados.id).notNull(),
   categoriaPersonasId: varchar("categoria_personas_id", { length: 36 })
     .references(() => catCategoriaPersonas.id)
