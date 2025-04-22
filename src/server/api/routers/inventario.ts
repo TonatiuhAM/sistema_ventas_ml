@@ -104,8 +104,47 @@ async function obtenerEstadoActivo() {
   return nuevoEstadoId;
 }
 
-// Asegurar que existe el usuario sistema al iniciar el router
-asegurarUsuarioSistema();
+// Función para asegurar que existan todos los tipos de movimientos necesarios
+async function asegurarTipoMovimientos() {
+  try {
+    // Lista de tipos de movimiento que deben existir
+    const tiposNecesarios = ["CREACION", "COMPRA", "VENTA", "ENTRADA", "SALIDA", "EDICION"];
+    
+    // Verificar cuáles ya existen
+    const tiposExistentes = await db
+      .select()
+      .from(catTipoMovimientos);
+      
+    const movimientosExistentes = tiposExistentes.map(tipo => tipo.movimiento);
+    console.log("Tipos de movimientos existentes:", movimientosExistentes);
+    
+    // Crear los que no existen
+    for (const tipo of tiposNecesarios) {
+      if (!movimientosExistentes.includes(tipo)) {
+        console.log(`Creando tipo de movimiento: ${tipo}`);
+        await db.insert(catTipoMovimientos).values({
+          id: uuidv4(),
+          movimiento: tipo
+        });
+      }
+    }
+    
+    console.log("Verificación de tipos de movimientos completada");
+    return true;
+  } catch (error) {
+    console.error("Error al asegurar tipos de movimientos:", error);
+    return false;
+  }
+}
+
+// Inicializar catálogos
+async function inicializarCatalogos() {
+  await asegurarUsuarioSistema();
+  await asegurarTipoMovimientos();
+}
+
+// Inicializar al cargar el router
+inicializarCatalogos();
 
 export const inventoryRouter = createTRPCRouter({
     // Obtener todos los productos
@@ -327,6 +366,130 @@ export const inventoryRouter = createTRPCRouter({
             }
         }),
 
+    // Actualizar un producto con inventario y registrar el movimiento
+    updateProductWithInventory: publicProcedure
+        .input(
+            z.object({
+                id: z.string().uuid(),
+                nombre: z.string().max(30),
+                categoriasProductosId: z.string().uuid(),
+                proveedorId: z.string().uuid(),
+                estadosId: z.string().uuid(),
+                precio: z.number(),
+                actualizarPrecio: z.boolean().default(false),
+                ubicacionId: z.string().uuid(),
+                cantidadActual: z.number().int().min(0).optional(),
+                cantidadMaxima: z.number().int().min(0).optional(),
+                cantidadMinima: z.number().int().min(0).optional(),
+            })
+        )
+        .mutation(async ({ input, ctx }) => {
+            const { 
+                id, precio, actualizarPrecio, ubicacionId,
+                cantidadActual, cantidadMaxima, cantidadMinima,
+                ...productData 
+            } = input;
+            
+            try {
+                return await db.transaction(async (trx) => {
+                    // 1. Actualizar los datos del producto
+                    const updatedProduct = await trx.update(productos)
+                        .set(productData)
+                        .where(eq(productos.id, id))
+                        .returning();
+                    
+                    // 2. Si se debe actualizar el precio, registrar nuevo precio
+                    if (actualizarPrecio) {
+                        await trx.insert(historialPrecios).values({
+                            id: uuidv4(),
+                            productosId: id,
+                            precio,
+                            fechaDeRegistro: new Date(),
+                        });
+                    }
+                    
+                    // 3. Verificar si el inventario necesita ser actualizado
+                    const inventarioActual = await trx
+                        .select()
+                        .from(inventarios)
+                        .where(
+                            and(
+                                eq(inventarios.productosId, id),
+                                eq(inventarios.ubicacionesId, ubicacionId)
+                            )
+                        )
+                        .limit(1);
+                    
+                    // Si existe el inventario y hay valores a actualizar
+                    if (inventarioActual.length > 0) {
+                        const updateData: Record<string, unknown> = {};
+                        
+                        if (cantidadMaxima !== undefined) {
+                            updateData.cantidadMaxima = cantidadMaxima;
+                        }
+                        
+                        if (cantidadMinima !== undefined) {
+                            updateData.cantidadMinima = cantidadMinima;
+                        }
+                        
+                        if (Object.keys(updateData).length > 0) {
+                            await trx.update(inventarios)
+                                .set(updateData)
+                                .where(eq(inventarios.id, inventarioActual[0]!.id));
+                        }
+                    } else {
+                        // Si el inventario no existe en esa ubicación y hay cantidad, crear nuevo
+                        if (cantidadActual !== undefined && cantidadActual > 0) {
+                            if (cantidadMaxima === undefined || cantidadMinima === undefined) {
+                                throw new Error("Para crear un nuevo inventario se requieren cantidades mínima y máxima");
+                            }
+                            
+                            await trx.insert(inventarios).values({
+                                id: uuidv4(),
+                                productosId: id,
+                                ubicacionesId: ubicacionId,
+                                cantidadDisponible: cantidadActual,
+                                cantidadMinima: cantidadMinima,
+                                cantidadMaxima: cantidadMaxima,
+                            });
+                        }
+                    }
+                    
+                    // 4. Buscar el tipo de movimiento EDICION
+                    const tipoMovimientoEdicion = await trx
+                        .select()
+                        .from(catTipoMovimientos)
+                        .where(eq(catTipoMovimientos.movimiento, "EDICION"))
+                        .limit(1);
+                    
+                    if (tipoMovimientoEdicion.length === 0) {
+                        throw new Error("No se encontró el tipo de movimiento EDICION");
+                    }
+                    
+                    // 5. Registrar movimiento de tipo EDICION con cantidad 0
+                    const movimientoId = uuidv4();
+                    await trx.insert(movimientosInventarios).values({
+                        id: movimientoId,
+                        productosId: id,
+                        ubicacionesId: ubicacionId,
+                        tipoMovimientosId: tipoMovimientoEdicion[0]!.id,
+                        cantidad: 0, // La edición no afecta la cantidad
+                        fechaMovimiento: new Date(),
+                        usuariosId: ctx.session?.user?.id || SISTEMA_ID,
+                        claveMovimiento: `EDICION-${movimientoId.substring(0, 8)}`,
+                    });
+                    
+                    return { 
+                        success: true,
+                        data: updatedProduct
+                    };
+                });
+            } catch (error) {
+                console.error("Error al actualizar el producto:", error);
+                throw new Error(error instanceof Error ? error.message : "Error desconocido al actualizar el producto");
+            }
+        }),
+
     // Eliminar un producto y su historial de precios
     delete: publicProcedure
         .input(z.object({ id: z.string().uuid() }))
@@ -353,39 +516,33 @@ export const inventoryRouter = createTRPCRouter({
 
     // Obtener productos con su precio más reciente
     getAllWithPrices: publicProcedure.query(async () => {
-        // 1. Primero obtenemos todos los productos
-        const allProducts = await db.select().from(productos);
-        
-        // 2. Para cada producto, buscamos su precio más reciente
-        const productsWithPrices = await Promise.all(
-            allProducts.map(async (product) => {
-                // Buscar el precio más reciente para este producto
-                const latestPrice = await db
-                    .select()
-                    .from(historialPrecios)
-                    .where(
-                        and(
-                            eq(historialPrecios.productosId, product.id),
-                            lte(historialPrecios.fechaDeRegistro, new Date())
-                        )
-                    )
-                    .orderBy(desc(historialPrecios.fechaDeRegistro))
-                    .limit(1);
-
-                // Combinar el producto con su precio más reciente
-                return {
-                    id: product.id,
-                    nombre: product.nombre,
-                    categoriasProductosId: product.categoriasProductosId,
-                    proveedorId: product.proveedorId,
-                    estadosId: product.estadosId,
-                    precio: latestPrice[0]?.precio ?? null,
-                    fechaDeRegistro: latestPrice[0]?.fechaDeRegistro ?? null,
-                };
+        // Subconsulta para obtener el ID del último historial de precios para cada producto
+        const latestPriceSubquery = db
+            .select({
+                productosId: historialPrecios.productosId,
+                maxId: max(historialPrecios.id).as("maxId"),
             })
-        );
+            .from(historialPrecios)
+            .where(lte(historialPrecios.fechaDeRegistro, new Date()))
+            .groupBy(historialPrecios.productosId)
+            .as("latest_prices");
 
-        return productsWithPrices;
+        const result = await db
+            .select({
+                id: productos.id,
+                nombre: productos.nombre,
+                categoriasProductosId: productos.categoriasProductosId,
+                proveedorId: productos.proveedorId,
+                estadosId: productos.estadosId,
+                precio: historialPrecios.precio,
+                fechaDeRegistro: historialPrecios.fechaDeRegistro,
+            })
+            .from(productos)
+            .leftJoin(latestPriceSubquery, eq(productos.id, latestPriceSubquery.productosId))
+            .leftJoin(historialPrecios, eq(latestPriceSubquery.maxId, historialPrecios.id))
+            .orderBy(productos.nombre);
+
+        return result;
     }),
 
     // Obtener categorías
@@ -528,13 +685,27 @@ export const inventoryRouter = createTRPCRouter({
             }
         }),
 
-    // Obtener el inventario actual de todos los productos
+    // Obtener el inventario actual de todos los productos con su precio más reciente
     getInventarioActual: publicProcedure.query(async () => {
+        // Subconsulta para obtener el ID del último historial de precios para cada producto
+        const latestPriceSubquery = db
+            .select({
+                productosId: historialPrecios.productosId,
+                latestId: max(historialPrecios.id).as("latestId"),
+            })
+            .from(historialPrecios)
+            .where(lte(historialPrecios.fechaDeRegistro, new Date()))
+            .groupBy(historialPrecios.productosId)
+            .as("latestPriceSubquery");
+
         const result = await db
             .select({
                 producto: {
                     id: productos.id,
                     nombre: productos.nombre,
+                    categoriasProductosId: productos.categoriasProductosId,
+                    proveedorId: productos.proveedorId,
+                    estadosId: productos.estadosId,
                 },
                 inventario: {
                     id: inventarios.id,
@@ -546,11 +717,15 @@ export const inventoryRouter = createTRPCRouter({
                     id: catUbicaciones.id,
                     nombre: catUbicaciones.nombre,
                     ubicacion: catUbicaciones.ubicacion,
-                }
+                },
+                precio: historialPrecios.precio,
+                fechaActualizacionPrecio: historialPrecios.fechaDeRegistro,
             })
             .from(inventarios)
             .innerJoin(productos, eq(inventarios.productosId, productos.id))
             .innerJoin(catUbicaciones, eq(inventarios.ubicacionesId, catUbicaciones.id))
+            .leftJoin(latestPriceSubquery, eq(productos.id, latestPriceSubquery.productosId))
+            .leftJoin(historialPrecios, eq(latestPriceSubquery.latestId, historialPrecios.id))
             .orderBy(productos.nombre);
 
         return result;

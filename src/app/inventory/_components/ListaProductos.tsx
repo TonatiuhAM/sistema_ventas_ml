@@ -5,7 +5,17 @@ import { useInventory } from "~/hooks/useInventory";
 import { v4 as uuidv4 } from "uuid";
 
 export const ListaProductos = () => {
-  const { getAllWithPrices, remove, updateWithPrice, fetchCategorias, fetchProveedores, fetchEstados } = useInventory();
+  const { 
+    getAllWithPrices, 
+    remove, 
+    updateProductWithInventory, 
+    fetchCategorias, 
+    fetchProveedores, 
+    fetchEstados, 
+    fetchUbicaciones,
+    getInventarioActual
+  } = useInventory();
+  
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     id: "",
@@ -15,21 +25,34 @@ export const ListaProductos = () => {
     estadosId: "",
     precio: "",
     actualizarPrecio: false,
+    ubicacionId: "",
+    cantidadMinima: "",
+    cantidadMaxima: ""
   });
 
-  if (getAllWithPrices.isLoading || 
-     fetchCategorias.isLoading || 
-     fetchProveedores.isLoading || 
-     fetchEstados.isLoading) return <p>Cargando...</p>;
+  if (
+    getAllWithPrices.isLoading || 
+    fetchCategorias.isLoading || 
+    fetchProveedores.isLoading || 
+    fetchEstados.isLoading ||
+    fetchUbicaciones.isLoading ||
+    getInventarioActual.isLoading
+  ) return <p>Cargando...</p>;
   
-  if (getAllWithPrices.isError || 
-     fetchCategorias.isError || 
-     fetchProveedores.isError || 
-     fetchEstados.isError) return <p>Error al cargar los datos.</p>;
+  if (
+    getAllWithPrices.isError || 
+    fetchCategorias.isError || 
+    fetchProveedores.isError || 
+    fetchEstados.isError ||
+    fetchUbicaciones.isError ||
+    getInventarioActual.isError
+  ) return <p>Error al cargar los datos.</p>;
 
   const categorias = fetchCategorias.data || [];
   const proveedores = fetchProveedores.data || [];
   const estados = fetchEstados.data || [];
+  const ubicaciones = fetchUbicaciones.data || [];
+  const inventario = getInventarioActual.data || [];
 
   const getCategoriaName = (id: string) => {
     const categoria = categorias.find(cat => cat.id === id);
@@ -47,6 +70,11 @@ export const ListaProductos = () => {
   };
 
   const handleEdit = (product: any) => {
+    // Buscar el inventario asociado a este producto
+    const productoInventario = inventario.find(
+      inv => inv.producto.id === product.id
+    );
+    
     setEditingProductId(product.id);
     setEditForm({
       id: product.id,
@@ -56,6 +84,9 @@ export const ListaProductos = () => {
       estadosId: product.estadosId,
       precio: product.precio ? product.precio.toString() : "",
       actualizarPrecio: false,
+      ubicacionId: productoInventario?.ubicacion.id || "",
+      cantidadMinima: productoInventario?.inventario.cantidadMinima?.toString() || "",
+      cantidadMaxima: productoInventario?.inventario.cantidadMaxima?.toString() || ""
     });
   };
 
@@ -69,12 +100,16 @@ export const ListaProductos = () => {
       estadosId: "",
       precio: "",
       actualizarPrecio: false,
+      ubicacionId: "",
+      cantidadMinima: "",
+      cantidadMaxima: ""
     });
   };
 
   const handleSaveEdit = async () => {
     try {
-      await updateWithPrice.mutateAsync({
+      // Usar el nuevo método updateProductWithInventory que registra automáticamente el movimiento EDICION
+      await updateProductWithInventory.mutateAsync({
         id: editForm.id,
         nombre: editForm.nombre,
         categoriasProductosId: editForm.categoriasProductosId,
@@ -82,14 +117,19 @@ export const ListaProductos = () => {
         estadosId: editForm.estadosId,
         precio: parseFloat(editForm.precio),
         actualizarPrecio: editForm.actualizarPrecio,
+        ubicacionId: editForm.ubicacionId,
+        cantidadMinima: editForm.cantidadMinima ? parseInt(editForm.cantidadMinima) : undefined,
+        cantidadMaxima: editForm.cantidadMaxima ? parseInt(editForm.cantidadMaxima) : undefined,
       });
       
       setEditingProductId(null);
       getAllWithPrices.refetch();
+      getInventarioActual.refetch();
       
     } catch (error) {
       console.error("Error al actualizar el producto:", error);
-      alert("Ocurrió un error al actualizar el producto.");
+      alert("Ocurrió un error al actualizar el producto: " + 
+        (error instanceof Error ? error.message : "Error desconocido"));
     }
   };
 
@@ -99,6 +139,7 @@ export const ListaProductos = () => {
         await remove.mutateAsync({ id: productId });
         // Recargar la lista de productos
         getAllWithPrices.refetch();
+        getInventarioActual.refetch();
       } catch (error) {
         console.error("Error al eliminar el producto:", error);
         alert("Ocurrió un error al eliminar el producto.");
@@ -192,6 +233,39 @@ export const ListaProductos = () => {
                             className="w-full p-2 border rounded"
                           />
                         </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+                          <select
+                            value={editForm.ubicacionId}
+                            onChange={(e) => setEditForm({ ...editForm, ubicacionId: e.target.value })}
+                            className="w-full p-2 border rounded"
+                          >
+                            <option value="">Selecciona una ubicación</option>
+                            {ubicaciones.map((ubicacion) => (
+                              <option key={ubicacion.id} value={ubicacion.id}>
+                                {ubicacion.nombre} - {ubicacion.ubicacion}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad Mínima</label>
+                          <input
+                            type="number"
+                            value={editForm.cantidadMinima}
+                            onChange={(e) => setEditForm({ ...editForm, cantidadMinima: e.target.value })}
+                            className="w-full p-2 border rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad Máxima</label>
+                          <input
+                            type="number"
+                            value={editForm.cantidadMaxima}
+                            onChange={(e) => setEditForm({ ...editForm, cantidadMaxima: e.target.value })}
+                            className="w-full p-2 border rounded"
+                          />
+                        </div>
                         <div className="flex items-center mt-4">
                           <input
                             type="checkbox"
@@ -224,7 +298,7 @@ export const ListaProductos = () => {
                 ) : (
                   <>
                     <td className="px-4 py-2">{product.nombre}</td>
-                    <td className="px-4 py-2">${product.precio}</td>
+                    <td className="px-4 py-2">${product.precio?.toFixed(2) || "N/A"}</td>
                     <td className="px-4 py-2">{getCategoriaName(product.categoriasProductosId)}</td>
                     <td className="px-4 py-2">{getProveedorName(product.proveedorId)}</td>
                     <td className="px-4 py-2">{getEstadoName(product.estadosId)}</td>

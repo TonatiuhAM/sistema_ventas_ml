@@ -7,6 +7,7 @@ export const useInventory = () => {
   const create = trpc.inventory.create.useMutation();
   const update = trpc.inventory.update.useMutation();
   const updateWithPrice = trpc.inventory.updateWithPrice.useMutation();
+  const updateProductWithInventory = trpc.inventory.updateProductWithInventory.useMutation();
   const remove = trpc.inventory.delete.useMutation();
   const fetchCategorias = trpc.inventory.fetchCategorias.useQuery();
   const fetchProveedores = trpc.inventory.fetchProveedores.useQuery();
@@ -26,16 +27,18 @@ export const useInventory = () => {
   );
   
   // Función para cargar los movimientos de un producto específico
-  const loadMovimientosProducto = async (productoId: string) => {
+  const loadMovimientosProducto = (productoId: string) => {
     setSelectedProductId(productoId);
-    return getMovimientosProducto.refetch();
+    // No es necesario refetch aquí, el cambio en selectedProductId activará la query
+    // return getMovimientosProducto.refetch(); 
   };
 
   return { 
     getAllWithPrices, 
     create, 
     update, 
-    updateWithPrice, 
+    updateWithPrice,
+    updateProductWithInventory, 
     remove, 
     fetchCategorias, 
     fetchProveedores, 

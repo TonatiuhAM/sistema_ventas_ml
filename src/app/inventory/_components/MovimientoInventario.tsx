@@ -143,14 +143,11 @@ export const MovimientoInventario = ({ onSuccess }: { onSuccess: () => void }) =
               className="w-full p-2 border rounded"
             >
               <option value="">Seleccione tipo de movimiento</option>
-              {tipoMovimientos
-                .filter(tipo => ["COMPRA", "VENTA", "ENTRADA", "SALIDA"].includes(tipo.movimiento))
-                .map((tipo) => (
-                  <option key={tipo.id} value={tipo.id}>
-                    {tipo.movimiento}
-                  </option>
-                ))
-              }
+              {tipoMovimientos.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.movimiento}
+                </option>
+              ))}
             </select>
           </div>
 
