@@ -1,104 +1,88 @@
 "use client";
 
-import { useState } from "react";
-import { AdminCategoriasProductos } from "~/app/catalogs/_components/AdminCategoriasProductos";
-import { AdminEstados } from "~/app/catalogs/_components/AdminEstados";
-import { AdminCategoriasPersonas } from "~/app/catalogs/_components/AdminCategoriasPersonas";
-import { AdminRoles } from "~/app/catalogs/_components/AdminRoles";
-import { AdminMetodosPago } from "~/app/catalogs/_components/AdminMetodosPago";
-import { AdminTipoMovimientos } from "~/app/catalogs/_components/AdminTipoMovimientos";
-import { AdminUbicaciones } from "~/app/catalogs/_components/AdminUbicaciones";
+import { Suspense } from "react";
+import { useRolePermissions } from "~/hooks/useRolePermissions";
+import { AdminCategoriasPersonas } from "./_components/AdminCategoriasPersonas";
+import { AdminCategoriasProductos } from "./_components/AdminCategoriasProductos";
+import { AdminEstados } from "./_components/AdminEstados";
+import { AdminMetodosPago } from "./_components/AdminMetodosPago";
+import { AdminRoles } from "./_components/AdminRoles";
+import { AdminTipoMovimientos } from "./_components/AdminTipoMovimientos";
+import { AdminUbicaciones } from "./_components/AdminUbicaciones";
 
 export default function CatalogsPage() {
-  const [activeCatalog, setActiveCatalog] = useState<string>("categorias");
-
-  const renderCatalog = () => {
-    switch (activeCatalog) {
-      case "categorias":
-        return <AdminCategoriasProductos />;
-      case "estados":
-        return <AdminEstados />;
-      case "categoriasPersonas":
-        return <AdminCategoriasPersonas />;
-      case "roles":
-        return <AdminRoles />;
-      case "metodosPago":
-        return <AdminMetodosPago />;
-      case "tipoMovimientos":
-        return <AdminTipoMovimientos />;
-      case "ubicaciones":
-        return <AdminUbicaciones />;
-      default:
-        return <AdminCategoriasProductos />;
-    }
-  };
-
+  // Verificar permisos de rol
+  const { hasAccess, isLoading } = useRolePermissions("catalogs");
+  
+  // Si está cargando, mostrar indicador
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <p>Cargando...</p>
+      </div>
+    );
+  }
+  
+  // Si no tiene acceso, el hook redirigirá automáticamente
+  
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-6">Administración de Catálogos</h1>
-
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          className={`px-4 py-2 rounded ${
-            activeCatalog === "categorias" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveCatalog("categorias")}
-        >
-          Categorías de Productos
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeCatalog === "estados" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveCatalog("estados")}
-        >
-          Estados
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeCatalog === "categoriasPersonas" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveCatalog("categoriasPersonas")}
-        >
-          Categorías de Personas
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeCatalog === "roles" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveCatalog("roles")}
-        >
-          Roles
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeCatalog === "metodosPago" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveCatalog("metodosPago")}
-        >
-          Métodos de Pago
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeCatalog === "tipoMovimientos" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveCatalog("tipoMovimientos")}
-        >
-          Tipos de Movimientos
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeCatalog === "ubicaciones" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveCatalog("ubicaciones")}
-        >
-          Ubicaciones
-        </button>
+    <main className="flex min-h-screen flex-col items-center justify-start p-4">
+      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-8">
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-[3rem]">
+          <span className="text-[hsl(280,100%,70%)]">Catálogos</span> del Sistema
+        </h1>
+        
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Roles de Usuario</h2>
+            <Suspense fallback={<div>Cargando roles...</div>}>
+              <AdminRoles />
+            </Suspense>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Estados</h2>
+            <Suspense fallback={<div>Cargando estados...</div>}>
+              <AdminEstados />
+            </Suspense>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Categorías de Productos</h2>
+            <Suspense fallback={<div>Cargando categorías...</div>}>
+              <AdminCategoriasProductos />
+            </Suspense>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Categorías de Personas</h2>
+            <Suspense fallback={<div>Cargando categorías...</div>}>
+              <AdminCategoriasPersonas />
+            </Suspense>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Métodos de Pago</h2>
+            <Suspense fallback={<div>Cargando métodos de pago...</div>}>
+              <AdminMetodosPago />
+            </Suspense>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Tipos de Movimiento</h2>
+            <Suspense fallback={<div>Cargando tipos de movimiento...</div>}>
+              <AdminTipoMovimientos />
+            </Suspense>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Ubicaciones</h2>
+            <Suspense fallback={<div>Cargando ubicaciones...</div>}>
+              <AdminUbicaciones />
+            </Suspense>
+          </div>
+        </div>
       </div>
-
-      <div className="bg-white p-6 rounded-lg shadow">
-        {renderCatalog()}
-      </div>
-    </div>
+    </main>
   );
 }

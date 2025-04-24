@@ -90,9 +90,9 @@ export const historialCostos = createTable("historial_costos", {
 
 export const usuarios = createTable("usuarios", {
   id: varchar("id", { length: 36 }).primaryKey().notNull(),
-  nombre: varchar("nombre", { length: 30 }).notNull(),
-  contrasena: varchar("contrasena", { length: 32 }).notNull(),
-  telefono: varchar("telefono", { length: 20 }).notNull(),
+  nombre: varchar("nombre", { length: 50 }).notNull(),
+  contrasena: varchar("contrasena", { length: 100 }).notNull(),
+  telefono: varchar("telefono", { length: 50 }).notNull(),
   rolesId: varchar("roles_id", { length: 36 }).references(() => catRoles.id).notNull(),
   estadosId: varchar("estados_id", { length: 36 }).references(() => catEstados.id).notNull(),
 });
@@ -195,7 +195,7 @@ export const composicionProductos = createTable("composicion_productos", {
 export const nextAuthUsers = createTable("next_auth_users", {
   id: varchar("id", { length: 36 }).primaryKey().notNull(),
   name: varchar("name", { length: 30 }),
-  email: varchar("email", { length: 50 }).notNull(),
+  email: varchar("email", { length: 254 }).notNull(),
   emailVerified: timestamp("email_verified", { withTimezone: true }),
   image: varchar("image", { length: 255 }),
 });

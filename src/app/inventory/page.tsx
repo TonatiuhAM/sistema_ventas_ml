@@ -1,68 +1,56 @@
 "use client";
 
-import { useState } from "react";
-import { FormularioProductos } from "./_components/FormularioProductos";
-import { MovimientoInventario } from "./_components/MovimientoInventario";
+import { Suspense } from "react";
+import { useRolePermissions } from "~/hooks/useRolePermissions";
+import { ListaProductos } from "./_components/ListaProductos";
 import { InventarioActual } from "./_components/InventarioActual";
+import { MovimientoInventario } from "./_components/MovimientoInventario";
 
-const InventoryPage = () => {
-  const [activeTab, setActiveTab] = useState<string>("inventario");
-
-  const handleSuccess = () => {
-    // Refrescar la página cuando se realiza una operación exitosa
-    window.location.reload();
-  };
-
-  const renderActiveTab = () => {
-    switch (activeTab) {
-      case "nuevo-producto":
-        return <FormularioProductos onSuccess={handleSuccess} />;
-      case "movimiento":
-        return <MovimientoInventario onSuccess={handleSuccess} />;
-      case "inventario":
-      default:
-        return <InventarioActual />;
-    }
-  };
-
+export default function InventarioPage() {
+  // Verificar permisos de rol
+  const { hasAccess, isLoading } = useRolePermissions("inventory");
+  
+  // Si está cargando, mostrar indicador
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <p>Cargando...</p>
+      </div>
+    );
+  }
+  
+  // Si no tiene acceso, el hook redirigirá automáticamente
+  
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-6">Gestión de Inventario</h1>
-      
-      {/* Pestañas de navegación */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          className={`px-4 py-2 rounded ${
-            activeTab === "inventario" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveTab("inventario")}
-        >
-          Inventario Actual
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeTab === "nuevo-producto" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveTab("nuevo-producto")}
-        >
-          Nuevo Producto
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeTab === "movimiento" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveTab("movimiento")}
-        >
-          Registrar Movimiento
-        </button>
+    <main className="flex min-h-screen flex-col items-center justify-start p-4">
+      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-8">
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-[3rem]">
+          <span className="text-[hsl(280,100%,70%)]">Gestión</span> de Inventario
+        </h1>
+        
+        <div className="w-full grid grid-cols-1 gap-8">
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Productos</h2>
+            <Suspense fallback={<div>Cargando productos...</div>}>
+              <ListaProductos />
+            </Suspense>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Inventario Actual</h2>
+            <Suspense fallback={<div>Cargando inventario...</div>}>
+              <InventarioActual />
+            </Suspense>
+          </div>
+          
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Movimientos de Inventario</h2>
+            <Suspense fallback={<div>Cargando movimientos...</div>}>
+              <MovimientoInventario onSuccess={() => console.log("Movimiento completado")} />
+            </Suspense>
+          </div>
+        </div>
       </div>
-
-      {/* Contenido de la pestaña activa */}
-      <div className="bg-white p-0 rounded-lg shadow">
-        {renderActiveTab()}
-      </div>
-    </div>
+    </main>
   );
-};
-
-export default InventoryPage;
+}
