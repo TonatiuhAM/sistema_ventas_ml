@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaBoxOpen, FaListAlt, FaCashRegister, FaUsers, FaUserCog, FaSignInAlt, FaSignOutAlt, FaUser } from "react-icons/fa";
+import { FaBoxOpen, FaListAlt, FaCashRegister, FaUsers, FaUserCog, FaSignInAlt, FaSignOutAlt, FaUser, FaUtensils } from "react-icons/fa";
 import { useSession, signOut } from "next-auth/react";
 
 export default function Home() {
@@ -94,7 +94,7 @@ export default function Home() {
               </Link>
             )}
 
-            {/* El punto de venta está disponible para todos los roles */}
+            {/* Punto de venta estándar */}
             <Link 
               href="/pos" 
               className="bg-white/10 hover:bg-white/20 p-8 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105"
@@ -102,6 +102,16 @@ export default function Home() {
               <FaCashRegister className="text-5xl mb-4" />
               <h2 className="text-2xl font-semibold">Punto de Venta</h2>
               <p className="text-sm mt-2 text-center opacity-80">Registra ventas y transacciones</p>
+            </Link>
+
+            {/* Punto de venta de restaurante */}
+            <Link 
+              href="/restaurant" 
+              className="bg-white/10 hover:bg-white/20 p-8 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105"
+            >
+              <FaUtensils className="text-5xl mb-4" />
+              <h2 className="text-2xl font-semibold">Restaurante</h2>
+              <p className="text-sm mt-2 text-center opacity-80">Gestión de mesas y órdenes</p>
             </Link>
 
             {/* Solo mostrar el enlace a usuarios si tiene permiso */}

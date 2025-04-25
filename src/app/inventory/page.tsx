@@ -1,14 +1,15 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useRolePermissions } from "~/hooks/useRolePermissions";
-import { ListaProductos } from "./_components/ListaProductos";
-import { InventarioActual } from "./_components/InventarioActual";
+import { TablaInventario } from "./_components/TablaInventario";
+import { FormularioProductos } from "./_components/FormularioProductos";
 import { MovimientoInventario } from "./_components/MovimientoInventario";
 
 export default function InventarioPage() {
   // Verificar permisos de rol
   const { hasAccess, isLoading } = useRolePermissions("inventory");
+  const [showProductForm, setShowProductForm] = useState(false);
   
   // Si está cargando, mostrar indicador
   if (isLoading) {
@@ -30,16 +31,28 @@ export default function InventarioPage() {
         
         <div className="w-full grid grid-cols-1 gap-8">
           <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-4">Productos</h2>
-            <Suspense fallback={<div>Cargando productos...</div>}>
-              <ListaProductos />
-            </Suspense>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-4">Inventario Actual</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Inventario de Productos</h2>
+              <button 
+                onClick={() => setShowProductForm(!showProductForm)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                {showProductForm ? 'Ocultar Formulario' : 'Nuevo Producto'}
+              </button>
+            </div>
+            
+            {showProductForm && (
+              <div className="mb-6">
+                <FormularioProductos 
+                  onSuccess={() => {
+                    setShowProductForm(false);
+                  }} 
+                />
+              </div>
+            )}
+            
             <Suspense fallback={<div>Cargando inventario...</div>}>
-              <InventarioActual />
+              <TablaInventario />
             </Suspense>
           </div>
           
